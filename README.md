@@ -6,7 +6,7 @@ Personal Neovim configuration managed with [GNU Stow](https://www.gnu.org/softwa
 
 ## What this gives you
 
-- Python LSP via **Pyright** (diagnostics, hover docs, go-to-definition, completion on `.`)
+- Python and Bash LSP (diagnostics, hover docs, go-to-definition, completion on `.`)
 - Syntax highlighting via **nvim-treesitter** + **tokyonight** theme
 - Plugin management via **lazy.nvim**
 - All config tracked in git and symlinked with Stow
@@ -18,11 +18,12 @@ Personal Neovim configuration managed with [GNU Stow](https://www.gnu.org/softwa
 Install these first with pacman:
 
 ```bash
-sudo pacman -S stow pyright tree-sitter-cli
+sudo pacman -S stow pyright bash-language-server tree-sitter-cli
 ```
 
 - `stow` — symlink manager that connects this repo to `~/.config`
 - `pyright` — the Python language server
+- `bash-language-server` — the Bash language server
 - `tree-sitter-cli` — required by nvim-treesitter to compile parsers
 
 ---
@@ -37,10 +38,11 @@ stow nvim
 
 Then open Neovim — lazy.nvim will automatically install itself and all plugins on first launch.
 
-Once inside Neovim, install the Python Treesitter parser:
+Once inside Neovim, install the Treesitter parsers:
 
 ```
 :TSInstall python
+:TSInstall bash
 ```
 
 Restart Neovim and syntax highlighting will be active.
@@ -63,13 +65,17 @@ A full truecolour theme that provides colour definitions for all Treesitter high
 
 ### 4. nvim-treesitter (syntax highlighting)
 
-Treesitter parses your code into a proper syntax tree rather than using regex patterns. This gives accurate, context-aware highlighting of keywords, classes, functions, types, strings etc. The plugin manages downloading and compiling language parsers. The Python parser must be installed separately with `:TSInstall python` because it is compiled at install time using `tree-sitter-cli`.
+Treesitter parses your code into a proper syntax tree rather than using regex patterns. This gives accurate, context-aware highlighting of keywords, classes, functions, types, strings etc. The plugin manages downloading and compiling language parsers. Parsers must be installed separately with `:TSInstall <language>` because they are compiled at install time using `tree-sitter-cli`.
 
 ### 5. Pyright (Python LSP)
 
 Pyright is a language server — a separate program that understands Python and communicates with Neovim over a protocol called LSP. Neovim 0.11 has a built-in LSP client so no plugin is needed. The file `lsp/pyright.lua` tells Neovim how to start Pyright, which filetypes to attach it to, and how to find the root of a project (looks for `.git`, `pyproject.toml` etc). Without a recognised root directory Pyright runs blind and cannot resolve imports.
 
-### 6. Built-in completion
+### 6. bash-language-server (Bash LSP)
+
+Works the same way as Pyright but for Bash scripts. Provides diagnostics, hover docs, and completion for shell builtins and commands. Configured in `lsp/bashls.lua`. Attaches to `.sh` and `.bash` files. Requires a `.git` folder in the project root to set the root directory correctly.
+
+### 7. Built-in completion
 
 Neovim 0.11 includes a built-in completion engine. `vim.lsp.completion.enable()` activates it. Completion triggers automatically on characters declared by the language server — for Pyright this is `.`, `[`, `"` and `'`. Confirm a completion with `<C-y>`.
 
@@ -100,5 +106,6 @@ These are active whenever an LSP server is attached to a buffer:
         └── nvim/
             ├── init.lua        ← main config
             └── lsp/
-                └── pyright.lua ← pyright language server config
+                ├── pyright.lua ← Python language server config
+                └── bashls.lua  ← Bash language server config
 ```
