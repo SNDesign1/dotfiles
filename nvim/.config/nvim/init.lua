@@ -1,13 +1,33 @@
-vim.lsp.enable("pyright")
+vim.opt.termguicolors = true
 
+-- Bootstrap lazy.nvim
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({ "git", "clone", "https://github.com/folke/lazy.nvim.git", lazypath })
+end
+vim.opt.rtp:prepend(lazypath)
+
+-- Plugins
+require("lazy").setup({
+  { "folke/tokyonight.nvim", priority = 1000, config = function()
+      require("tokyonight").setup({ style = "night" })
+      vim.cmd.colorscheme("tokyonight")
+  end},
+  { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate", config = function()
+      require("nvim-treesitter.configs").setup({
+        ensure_installed = { "python" },
+        highlight = { enable = true },
+      })
+  end},
+})
+
+-- LSP
+vim.lsp.enable("pyright")
 vim.opt.completeopt = { "menuone", "noselect", "popup" }
 
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(ev)
-    -- Enable built-in completion
     vim.lsp.completion.enable(true, ev.data.client_id, ev.buf, { autotrigger = true })
-
-    -- Keymaps
     local opts = { buffer = ev.buf }
     vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
     vim.keymap.set("n", "K",  vim.lsp.buf.hover, opts)
