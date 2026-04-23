@@ -14,15 +14,18 @@ require("lazy").setup({
       vim.cmd.colorscheme("tokyonight")
   end},
   { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate", config = function()
-      require("nvim-treesitter.configs").setup({
-        ensure_installed = { "python" },
-        highlight = { enable = true },
-      })
+      vim.schedule(function()
+        require("nvim-treesitter.configs").setup({
+          ensure_installed = { "python", "bash" },
+          highlight = { enable = true },
+        })
+      end)
   end},
 })
 
 -- LSP
 vim.lsp.enable("pyright")
+vim.lsp.enable("bashls")
 vim.opt.completeopt = { "menuone", "noselect", "popup" }
 
 vim.api.nvim_create_autocmd("LspAttach", {
