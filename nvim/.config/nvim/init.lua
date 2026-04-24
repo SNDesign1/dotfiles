@@ -1,12 +1,10 @@
 vim.opt.termguicolors = true
-
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.loop.fs_stat(lazypath) then
   vim.fn.system({ "git", "clone", "https://github.com/folke/lazy.nvim.git", lazypath })
 end
 vim.opt.rtp:prepend(lazypath)
-
 -- Plugins
 require("lazy").setup({
   { "folke/tokyonight.nvim", priority = 1000, config = function()
@@ -21,13 +19,29 @@ require("lazy").setup({
         })
       end)
   end},
-})
+  -- Telescope
+  { "nvim-telescope/telescope.nvim", version = "*",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+    },
+    config = function()
+      local telescope = require("telescope")
+      telescope.setup({})
+      telescope.load_extension("fzf")
 
+      vim.keymap.set("n", "SS", function()
+        require("telescope.builtin").find_files()
+      end, { noremap = true, desc = "SS: Telescope find files" })
+    end,
+  },
+})
+-- Timeoutlen for key sequences
+vim.opt.timeoutlen = 300
 -- LSP
 vim.lsp.enable("pyright")
 vim.lsp.enable("bashls")
 vim.opt.completeopt = { "menuone", "noselect", "popup" }
-
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(ev)
     vim.lsp.completion.enable(true, ev.data.client_id, ev.buf, { autotrigger = true })
