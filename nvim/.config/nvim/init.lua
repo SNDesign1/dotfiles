@@ -45,6 +45,7 @@ vim.opt.timeoutlen = 300
 -- LSP
 vim.lsp.enable("pyright")
 vim.lsp.enable("bashls")
+vim.lsp.enable("lua_ls")
 vim.opt.completeopt = { "menuone", "noselect", "popup" }
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(ev)

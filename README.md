@@ -6,7 +6,7 @@ Personal Neovim configuration managed with [GNU Stow](https://www.gnu.org/softwa
 
 ## What this gives you
 
-- Python and Bash LSP (diagnostics, hover docs, go-to-definition, completion on `.`)
+- Python, Bash, and Lua LSP (diagnostics, hover docs, go-to-definition, completion on `.`)
 - Syntax highlighting via **nvim-treesitter** + **tokyonight** theme
 - Plugin management via **lazy.nvim**
 - All config tracked in git and symlinked with Stow
@@ -18,12 +18,13 @@ Personal Neovim configuration managed with [GNU Stow](https://www.gnu.org/softwa
 Install these first with pacman:
 
 ```bash
-sudo pacman -S stow pyright bash-language-server tree-sitter-cli
+sudo pacman -S stow pyright bash-language-server lua-language-server tree-sitter-cli
 ```
 
 - `stow` — symlink manager that connects this repo to `~/.config`
 - `pyright` — the Python language server
 - `bash-language-server` — the Bash language server
+- `lua-language-server` — the Lua language server
 - `tree-sitter-cli` — required by nvim-treesitter to compile parsers
 
 ---
@@ -43,6 +44,7 @@ Once inside Neovim, install the Treesitter parsers:
 ```
 :TSInstall python
 :TSInstall bash
+:TSInstall lua
 ```
 
 Restart Neovim and syntax highlighting will be active.
@@ -75,7 +77,11 @@ Pyright is a language server — a separate program that understands Python and 
 
 Works the same way as Pyright but for Bash scripts. Provides diagnostics, hover docs, and completion for shell builtins and commands. Configured in `lsp/bashls.lua`. Attaches to `.sh` and `.bash` files. Requires a `.git` folder in the project root to set the root directory correctly.
 
-### 7. Built-in completion
+### 7. lua-language-server (Lua LSP)
+
+Works the same way as the other language servers but for Lua. Configured in `lsp/lua_ls.lua`. Attaches to `.lua` files and is aware of Neovim's LuaJIT runtime, so it understands the `vim.*` API — providing completion, hover docs, and diagnostics across your entire Neovim config. The `workspace.library` setting exposes Neovim's runtime files so the server can resolve built-in globals without false warnings.
+
+### 8. Built-in completion
 
 Neovim 0.11 includes a built-in completion engine. `vim.lsp.completion.enable()` activates it. Completion triggers automatically on characters declared by the language server — for Pyright this is `.`, `[`, `"` and `'`. Confirm a completion with `<C-y>`.
 
@@ -107,5 +113,6 @@ These are active whenever an LSP server is attached to a buffer:
             ├── init.lua        ← main config
             └── lsp/
                 ├── pyright.lua ← Python language server config
-                └── bashls.lua  ← Bash language server config
+                ├── bashls.lua  ← Bash language server config
+                └── lua_ls.lua  ← Lua language server config
 ```
