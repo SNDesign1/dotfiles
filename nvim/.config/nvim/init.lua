@@ -18,7 +18,7 @@ require("lazy").setup({
   { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate", config = function()
       vim.schedule(function()
         require("nvim-treesitter.configs").setup({
-          ensure_installed = { "python", "bash" },
+          ensure_installed = { "python", "bash", "c" },
           highlight = { enable = true },
         })
       end)
@@ -46,6 +46,7 @@ vim.opt.timeoutlen = 300
 vim.lsp.enable("pyright")
 vim.lsp.enable("bashls")
 vim.lsp.enable("lua_ls")
+vim.lsp.enable("clangd")
 vim.opt.completeopt = { "menuone", "noselect", "popup" }
 vim.api.nvim_create_autocmd("LspAttach", {
   callback = function(ev)
