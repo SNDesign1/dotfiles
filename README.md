@@ -6,7 +6,7 @@ Personal Neovim configuration managed with [GNU Stow](https://www.gnu.org/softwa
 
 ## What this gives you
 
-- Python, Bash, and Lua LSP (diagnostics, hover docs, go-to-definition, completion on `.`)
+- Python, Bash, Lua, C/C++, and Java LSP (diagnostics, hover docs, go-to-definition, completion)
 - Syntax highlighting via **nvim-treesitter** + **tokyonight** theme
 - Plugin management via **lazy.nvim**
 - All config tracked in git and symlinked with Stow
@@ -18,7 +18,13 @@ Personal Neovim configuration managed with [GNU Stow](https://www.gnu.org/softwa
 Install these first with pacman:
 
 ```bash
-sudo pacman -S stow pyright bash-language-server lua-language-server tree-sitter-cli
+sudo pacman -S stow pyright bash-language-server lua-language-server tree-sitter-cli clang jdk-openjdk
+```
+
+`jdtls` (the Java language server) isn't in the official repos — install it from the AUR:
+
+```bash
+paru -S jdtls
 ```
 
 - `stow` — symlink manager that connects this repo to `~/.config`
@@ -26,6 +32,9 @@ sudo pacman -S stow pyright bash-language-server lua-language-server tree-sitter
 - `bash-language-server` — the Bash language server
 - `lua-language-server` — the Lua language server
 - `tree-sitter-cli` — required by nvim-treesitter to compile parsers
+- `clang` — provides `clangd`, the C/C++ language server
+- `jdk-openjdk` — Java Development Kit, required to run both `javac` and `jdtls`
+- `jdtls` (AUR) — the Java language server, driven through the `nvim-jdtls` plugin
 
 ---
 
@@ -45,9 +54,16 @@ Once inside Neovim, install the Treesitter parsers:
 :TSInstall python
 :TSInstall bash
 :TSInstall lua
+:TSInstall c
+:TSInstall cpp
+:TSInstall java
 ```
 
 Restart Neovim and syntax highlighting will be active.
+
+For C/C++, clangd gives full intellisense (types across headers, includes, etc.) only when it can see your build flags. In a project with a `Makefile`/`CMakeLists.txt`, generate a `compile_commands.json` in the project root (e.g. `bear -- make`, or `cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .`) and clangd will pick it up automatically. Without one, clangd still works but falls back to guessed flags, so cross-file/header resolution can be incomplete.
+
+For Java, the first time you open a `.java` file in a project, `jdtls` will index the project into a workspace cache at `~/.cache/nvim/jdtls-workspace/<project-name>/`. Indexing can take a few seconds on first open — that's normal.
 
 ---
 
@@ -81,7 +97,15 @@ Works the same way as Pyright but for Bash scripts. Provides diagnostics, hover 
 
 Works the same way as the other language servers but for Lua. Configured in `lsp/lua_ls.lua`. Attaches to `.lua` files and is aware of Neovim's LuaJIT runtime, so it understands the `vim.*` API — providing completion, hover docs, and diagnostics across your entire Neovim config. The `workspace.library` setting exposes Neovim's runtime files so the server can resolve built-in globals without false warnings.
 
-### 8. Built-in completion
+### 8. clangd (C/C++ LSP)
+
+Configured in `lsp/clangd.lua`. Attaches to `.c`, `.cpp`, `.objc`, and `.objcpp` files. clangd is also the engine behind clang-based tooling in general, so it gives accurate diagnostics and completion straight from the real compiler frontend rather than a heuristic parser. Its root is detected from `compile_commands.json`, `CMakeLists.txt`, or `.git` — see the note above about generating `compile_commands.json` for full cross-file intellisense.
+
+### 9. jdtls (Java LSP)
+
+Java is handled differently from the other languages because jdtls requires its own per-project workspace directory to store index/cache state — a plain `lsp/*.lua` config isn't enough for that. Instead, `mfussenegger/nvim-jdtls` is pulled in as a plugin (lazy-loaded on the `java` filetype), and `ftplugin/java.lua` runs on every Java buffer: it finds the project root, derives a workspace directory under `~/.cache/nvim/jdtls-workspace/<project-name>/`, and starts/attaches jdtls with `jdtls.start_or_attach()`. Once attached it behaves like any other LSP client — the same `LspAttach` autocmd in `init.lua` wires up its keymaps and completion.
+
+### 10. Built-in completion
 
 Neovim 0.11 includes a built-in completion engine. `vim.lsp.completion.enable()` activates it. Completion triggers automatically on characters declared by the language server — for Pyright this is `.`, `[`, `"` and `'`. Confirm a completion with `<C-y>`.
 
@@ -110,9 +134,12 @@ These are active whenever an LSP server is attached to a buffer:
 └── nvim/
     └── .config/
         └── nvim/
-            ├── init.lua        ← main config
-            └── lsp/
-                ├── pyright.lua ← Python language server config
-                ├── bashls.lua  ← Bash language server config
-                └── lua_ls.lua  ← Lua language server config
+            ├── init.lua         ← main config
+            ├── lsp/
+            │   ├── pyright.lua  ← Python language server config
+            │   ├── bashls.lua   ← Bash language server config
+            │   ├── lua_ls.lua   ← Lua language server config
+            │   └── clangd.lua   ← C/C++ language server config
+            └── ftplugin/
+                └── java.lua     ← starts jdtls (Java) per project
 ```

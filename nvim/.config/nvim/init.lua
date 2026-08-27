@@ -18,7 +18,7 @@ require("lazy").setup({
   { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate", config = function()
       vim.schedule(function()
         require("nvim-treesitter.configs").setup({
-          ensure_installed = { "python", "bash", "c" },
+          ensure_installed = { "python", "bash", "c", "cpp", "java" },
           highlight = { enable = true },
         })
       end)
@@ -39,6 +39,8 @@ require("lazy").setup({
       end, { noremap = true, desc = "SS: Telescope find files" })
     end,
   },
+  -- Java (jdtls needs a plugin because it requires a per-project workspace dir)
+  { "mfussenegger/nvim-jdtls", ft = "java" },
 })
 -- Timeoutlen for key sequences
 vim.opt.timeoutlen = 300
