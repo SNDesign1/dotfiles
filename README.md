@@ -7,7 +7,7 @@ Personal Neovim configuration managed with [GNU Stow](https://www.gnu.org/softwa
 ## What this gives you
 
 - Python, Bash, Lua, C/C++, and Java LSP (diagnostics, hover docs, go-to-definition, completion)
-- Java debugging (breakpoints, step in/over/out, variable inspection) via **nvim-dap** + **nvim-dap-ui**
+- Java and C/C++ debugging (breakpoints, step in/over/out, variable inspection) via **nvim-dap** + **nvim-dap-ui**
 - Syntax highlighting via **nvim-treesitter** + **tokyonight** theme
 - Plugin management via **lazy.nvim**
 - All config tracked in git and symlinked with Stow
@@ -19,7 +19,7 @@ Personal Neovim configuration managed with [GNU Stow](https://www.gnu.org/softwa
 Install these first with pacman:
 
 ```bash
-sudo pacman -S stow pyright bash-language-server lua-language-server tree-sitter-cli clang jdk-openjdk
+sudo pacman -S stow pyright bash-language-server lua-language-server tree-sitter-cli clang jdk-openjdk gdb
 ```
 
 `jdtls` (the Java language server) and `java-debug` (the Java debug adapter) aren't in the official repos — install them from the AUR:
@@ -36,6 +36,7 @@ paru -S jdtls java-debug
 - `lua-language-server` — the Lua language server
 - `tree-sitter-cli` — required by nvim-treesitter to compile parsers
 - `clang` — provides `clangd`, the C/C++ language server
+- `gdb` — the C/C++ debugger, driven through `nvim-dap` using its built-in DAP mode (GDB 14+)
 - `jdk-openjdk` — Java Development Kit, required to run both `javac` and `jdtls`
 - `jdtls` (AUR) — the Java language server, driven through the `nvim-jdtls` plugin
 - `java-debug` (AUR) — the Java debug adapter server, driven through `nvim-dap` + `nvim-jdtls`
@@ -57,6 +58,8 @@ For C/C++, clangd gives full intellisense (types across headers, includes, etc.)
 For Java, the first time you open a `.java` file in a project, `jdtls` will index the project into a workspace cache at `~/.cache/nvim/jdtls-workspace/<project-name>/`. Indexing can take a few seconds on first open — that's normal.
 
 Java debugging only activates if `/usr/share/java-debug/com.microsoft.java.debug.plugin.jar` exists (i.e. the `java-debug` AUR package is installed) — `ftplugin/java.lua` checks for it and silently skips debug setup otherwise, so everything else keeps working even without it.
+
+To debug a C/C++ program: compile with debug symbols (`gcc -g -o myprog myprog.c`), open the source in Neovim, set a breakpoint with `<leader>db`, then press `<F5>`. It'll prompt for the path to the compiled executable — point it at `myprog`.
 
 ---
 
@@ -102,9 +105,13 @@ Java is handled differently from the other languages because jdtls requires its 
 
 Neovim 0.11 includes a built-in completion engine. `vim.lsp.completion.enable()` activates it. Completion triggers automatically on characters declared by the language server — for Pyright this is `.`, `[`, `"` and `'`. Confirm a completion with `<C-y>`.
 
-### 11. nvim-dap + nvim-dap-ui (Java debugging)
+### 11. nvim-dap + nvim-dap-ui (debugging)
 
-`nvim-dap` is a generic Debug Adapter Protocol client — it doesn't know anything about Java by itself, it just speaks the DAP wire protocol to whatever debug adapter process it's pointed at. `nvim-dap-ui` sits on top of it to render the running state (variables, call stack, breakpoints, REPL) as sidebar panels instead of one-off commands; it opens automatically when a debug session starts and closes when it ends, via the `dap.listeners` hooks in `init.lua`. For Java specifically, the adapter is the `java-debug` bundle (`com.microsoft.java.debug.plugin.jar`) — `ftplugin/java.lua` registers it with jdtls via `init_options.bundles`, and once jdtls attaches, `jdtls.setup_dap()` registers a `"java"` adapter with `nvim-dap` that proxies through the running jdtls connection. That's why Java debugging needs no separate adapter process of its own; it rides on the same jdtls connection.
+`nvim-dap` is a generic Debug Adapter Protocol client — it doesn't know anything about any particular language by itself, it just speaks the DAP wire protocol to whatever debug adapter process it's pointed at. `nvim-dap-ui` sits on top of it to render the running state (variables, call stack, breakpoints, REPL) as sidebar panels instead of one-off commands; it opens automatically when a debug session starts and closes when it ends, via the `dap.listeners` hooks in `init.lua`.
+
+For Java, the adapter is the `java-debug` bundle (`com.microsoft.java.debug.plugin.jar`) — `ftplugin/java.lua` registers it with jdtls via `init_options.bundles`, and once jdtls attaches, `jdtls.setup_dap()` registers a `"java"` adapter with `nvim-dap` that proxies through the running jdtls connection. Java debugging needs no separate adapter process of its own; it rides on the same jdtls connection.
+
+For C/C++, GDB (14+) has its own built-in DAP server, so `nvim-dap` just spawns `gdb --interpreter=dap` directly (registered as the `"gdb"` adapter in `init.lua`) — no separate adapter package needed. `dap.configurations.c`/`.cpp` define a "Launch" config that prompts for the path to a compiled executable each time you start debugging with `<F5>`, since (unlike Java, which jdtls already knows how to build/run) there's no build system integration telling `nvim-dap` what binary to run.
 
 ---
 
@@ -122,7 +129,7 @@ These are active whenever an LSP server is attached to a buffer:
 | `[d` | Previous diagnostic |
 | `]d` | Next diagnostic |
 
-Debugger keymaps (global, need `java-debug` installed to do anything for Java):
+Debugger keymaps (global; work for C/C++ out of the box, need `java-debug` installed for Java):
 
 | Key | Action |
 |-----|--------|

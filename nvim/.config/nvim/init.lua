@@ -43,8 +43,27 @@ require("lazy").setup({
   },
   -- Java (jdtls needs a plugin because it requires a per-project workspace dir)
   { "mfussenegger/nvim-jdtls", ft = "java" },
-  -- Debugging (DAP), driven by nvim-jdtls for Java
-  { "mfussenegger/nvim-dap" },
+  -- Debugging (DAP), driven by nvim-jdtls for Java and gdb's native DAP mode for C/C++
+  { "mfussenegger/nvim-dap", config = function()
+      local dap = require("dap")
+      dap.adapters.gdb = {
+        type = "executable",
+        command = "gdb",
+        args = { "--interpreter=dap" },
+      }
+      dap.configurations.c = {
+        {
+          name = "Launch",
+          type = "gdb",
+          request = "launch",
+          program = function()
+            return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+          end,
+          cwd = "${workspaceFolder}",
+        },
+      }
+      dap.configurations.cpp = dap.configurations.c
+  end},
   { "rcarriga/nvim-dap-ui", dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
     config = function()
       local dap, dapui = require("dap"), require("dapui")
