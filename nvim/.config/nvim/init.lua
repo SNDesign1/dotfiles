@@ -43,6 +43,17 @@ require("lazy").setup({
   },
   -- Java (jdtls needs a plugin because it requires a per-project workspace dir)
   { "mfussenegger/nvim-jdtls", ft = "java" },
+  -- Debugging (DAP), driven by nvim-jdtls for Java
+  { "mfussenegger/nvim-dap" },
+  { "rcarriga/nvim-dap-ui", dependencies = { "mfussenegger/nvim-dap", "nvim-neotest/nvim-nio" },
+    config = function()
+      local dap, dapui = require("dap"), require("dapui")
+      dapui.setup()
+      dap.listeners.after.event_initialized["dapui_config"] = function() dapui.open() end
+      dap.listeners.before.event_terminated["dapui_config"] = function() dapui.close() end
+      dap.listeners.before.event_exited["dapui_config"] = function() dapui.close() end
+    end,
+  },
 })
 -- Timeoutlen for key sequences
 vim.opt.timeoutlen = 300
@@ -65,3 +76,10 @@ vim.api.nvim_create_autocmd("LspAttach", {
     vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
   end,
 })
+-- DAP (debugger)
+vim.keymap.set("n", "<F5>", function() require("dap").continue() end)
+vim.keymap.set("n", "<F10>", function() require("dap").step_over() end)
+vim.keymap.set("n", "<F11>", function() require("dap").step_into() end)
+vim.keymap.set("n", "<F12>", function() require("dap").step_out() end)
+vim.keymap.set("n", "<leader>db", function() require("dap").toggle_breakpoint() end)
+vim.keymap.set("n", "<leader>du", function() require("dapui").toggle() end)

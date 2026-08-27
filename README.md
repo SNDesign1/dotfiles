@@ -7,6 +7,7 @@ Personal Neovim configuration managed with [GNU Stow](https://www.gnu.org/softwa
 ## What this gives you
 
 - Python, Bash, Lua, C/C++, and Java LSP (diagnostics, hover docs, go-to-definition, completion)
+- Java debugging (breakpoints, step in/over/out, variable inspection) via **nvim-dap** + **nvim-dap-ui**
 - Syntax highlighting via **nvim-treesitter** + **tokyonight** theme
 - Plugin management via **lazy.nvim**
 - All config tracked in git and symlinked with Stow
@@ -21,11 +22,13 @@ Install these first with pacman:
 sudo pacman -S stow pyright bash-language-server lua-language-server tree-sitter-cli clang jdk-openjdk
 ```
 
-`jdtls` (the Java language server) isn't in the official repos — install it from the AUR:
+`jdtls` (the Java language server) and `java-debug` (the Java debug adapter) aren't in the official repos — install them from the AUR:
 
 ```bash
-paru -S jdtls
+paru -S jdtls java-debug
 ```
+
+`java-debug` builds from source with Maven, so expect it to take a few minutes and pull in a `jdk21-openjdk` build dependency.
 
 - `stow` — symlink manager that connects this repo to `~/.config`
 - `pyright` — the Python language server
@@ -35,6 +38,7 @@ paru -S jdtls
 - `clang` — provides `clangd`, the C/C++ language server
 - `jdk-openjdk` — Java Development Kit, required to run both `javac` and `jdtls`
 - `jdtls` (AUR) — the Java language server, driven through the `nvim-jdtls` plugin
+- `java-debug` (AUR) — the Java debug adapter server, driven through `nvim-dap` + `nvim-jdtls`
 
 ---
 
@@ -51,6 +55,8 @@ Then open Neovim — lazy.nvim will automatically install itself and all plugins
 For C/C++, clangd gives full intellisense (types across headers, includes, etc.) only when it can see your build flags. In a project with a `Makefile`/`CMakeLists.txt`, generate a `compile_commands.json` in the project root (e.g. `bear -- make`, or `cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .`) and clangd will pick it up automatically. Without one, clangd still works but falls back to guessed flags, so cross-file/header resolution can be incomplete.
 
 For Java, the first time you open a `.java` file in a project, `jdtls` will index the project into a workspace cache at `~/.cache/nvim/jdtls-workspace/<project-name>/`. Indexing can take a few seconds on first open — that's normal.
+
+Java debugging only activates if `/usr/share/java-debug/com.microsoft.java.debug.plugin.jar` exists (i.e. the `java-debug` AUR package is installed) — `ftplugin/java.lua` checks for it and silently skips debug setup otherwise, so everything else keeps working even without it.
 
 ---
 
@@ -96,6 +102,10 @@ Java is handled differently from the other languages because jdtls requires its 
 
 Neovim 0.11 includes a built-in completion engine. `vim.lsp.completion.enable()` activates it. Completion triggers automatically on characters declared by the language server — for Pyright this is `.`, `[`, `"` and `'`. Confirm a completion with `<C-y>`.
 
+### 11. nvim-dap + nvim-dap-ui (Java debugging)
+
+`nvim-dap` is a generic Debug Adapter Protocol client — it doesn't know anything about Java by itself, it just speaks the DAP wire protocol to whatever debug adapter process it's pointed at. `nvim-dap-ui` sits on top of it to render the running state (variables, call stack, breakpoints, REPL) as sidebar panels instead of one-off commands; it opens automatically when a debug session starts and closes when it ends, via the `dap.listeners` hooks in `init.lua`. For Java specifically, the adapter is the `java-debug` bundle (`com.microsoft.java.debug.plugin.jar`) — `ftplugin/java.lua` registers it with jdtls via `init_options.bundles`, and once jdtls attaches, `jdtls.setup_dap()` registers a `"java"` adapter with `nvim-dap` that proxies through the running jdtls connection. That's why Java debugging needs no separate adapter process of its own; it rides on the same jdtls connection.
+
 ---
 
 ## Keymaps
@@ -111,6 +121,17 @@ These are active whenever an LSP server is attached to a buffer:
 | `<leader>ca` | Code action |
 | `[d` | Previous diagnostic |
 | `]d` | Next diagnostic |
+
+Debugger keymaps (global, need `java-debug` installed to do anything for Java):
+
+| Key | Action |
+|-----|--------|
+| `<F5>` | Continue / start debugging |
+| `<F10>` | Step over |
+| `<F11>` | Step into |
+| `<F12>` | Step out |
+| `<leader>db` | Toggle breakpoint |
+| `<leader>du` | Toggle the dap-ui panel |
 
 ---
 
