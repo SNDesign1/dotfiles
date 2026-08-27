@@ -15,13 +15,15 @@ require("lazy").setup({
       require("tokyonight").setup({ style = "night" })
       vim.cmd.colorscheme("tokyonight")
   end},
-  { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate", config = function()
-      vim.schedule(function()
-        require("nvim-treesitter.configs").setup({
-          ensure_installed = { "python", "bash", "c", "cpp", "java" },
-          highlight = { enable = true },
-        })
-      end)
+  { "nvim-treesitter/nvim-treesitter", lazy = false, build = ":TSUpdate", config = function()
+      require("nvim-treesitter").install({ "python", "bash", "lua", "c", "cpp", "java" })
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = { "python", "sh", "lua", "c", "cpp", "java" },
+        callback = function(ev)
+          local lang = ev.match == "sh" and "bash" or ev.match
+          pcall(vim.treesitter.start, ev.buf, lang)
+        end,
+      })
   end},
   -- Telescope
   { "nvim-telescope/telescope.nvim", version = "*",

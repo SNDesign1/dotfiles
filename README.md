@@ -46,20 +46,7 @@ cd ~/dotfiles
 stow nvim
 ```
 
-Then open Neovim — lazy.nvim will automatically install itself and all plugins on first launch.
-
-Once inside Neovim, install the Treesitter parsers:
-
-```
-:TSInstall python
-:TSInstall bash
-:TSInstall lua
-:TSInstall c
-:TSInstall cpp
-:TSInstall java
-```
-
-Restart Neovim and syntax highlighting will be active.
+Then open Neovim — lazy.nvim will automatically install itself and all plugins on first launch, and `nvim-treesitter` will automatically download and compile the Python, Bash, Lua, C, C++, and Java parsers in the background. Give it a few seconds on first launch; syntax highlighting for a given file kicks in as soon as its parser finishes compiling. To add another language later, run `:TSInstall <language>`.
 
 For C/C++, clangd gives full intellisense (types across headers, includes, etc.) only when it can see your build flags. In a project with a `Makefile`/`CMakeLists.txt`, generate a `compile_commands.json` in the project root (e.g. `bear -- make`, or `cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .`) and clangd will pick it up automatically. Without one, clangd still works but falls back to guessed flags, so cross-file/header resolution can be incomplete.
 
@@ -83,7 +70,7 @@ A full truecolour theme that provides colour definitions for all Treesitter high
 
 ### 4. nvim-treesitter (syntax highlighting)
 
-Treesitter parses your code into a proper syntax tree rather than using regex patterns. This gives accurate, context-aware highlighting of keywords, classes, functions, types, strings etc. The plugin manages downloading and compiling language parsers. Parsers must be installed separately with `:TSInstall <language>` because they are compiled at install time using `tree-sitter-cli`.
+Treesitter parses your code into a proper syntax tree rather than using regex patterns. This gives accurate, context-aware highlighting of keywords, classes, functions, types, strings etc. `nvim-treesitter` is on the `main` branch, which is a full rewrite of the plugin with a different API from the old `master` branch (no more `.setup({ ensure_installed, highlight })`). `init.lua` calls `require("nvim-treesitter").install({...})` on startup to fetch/compile any missing parsers with `tree-sitter-cli`, and a `FileType` autocommand calls `vim.treesitter.start()` per buffer to turn highlighting on — Neovim's core treesitter highlighter, not something the plugin enables for you anymore.
 
 ### 5. Pyright (Python LSP)
 
