@@ -101,6 +101,8 @@ Configured in `lsp/clangd.lua`. Attaches to `.c`, `.cpp`, `.objc`, and `.objcpp`
 
 Java is handled differently from the other languages because jdtls requires its own per-project workspace directory to store index/cache state — a plain `lsp/*.lua` config isn't enough for that. Instead, `mfussenegger/nvim-jdtls` is pulled in as a plugin (lazy-loaded on the `java` filetype), and `ftplugin/java.lua` runs on every Java buffer: it finds the project root, derives a workspace directory under `~/.cache/nvim/jdtls-workspace/<project-name>/`, and starts/attaches jdtls with `jdtls.start_or_attach()`. Once attached it behaves like any other LSP client — the same `LspAttach` autocmd in `init.lua` wires up its keymaps and completion.
 
+The root is detected from `pom.xml`, `build.gradle`/`build.gradle.kts`, or `.git`; if none of those exist as an ancestor (e.g. a standalone `.java` file with no Maven/Gradle/git project around it), `ftplugin/java.lua` falls back to the buffer's own directory as the root instead of skipping jdtls entirely — so completion, diagnostics, and hover still work outside a real project, just without cross-module awareness.
+
 ### 10. Built-in completion
 
 Neovim 0.11 includes a built-in completion engine. `vim.lsp.completion.enable()` activates it. Completion triggers automatically on characters declared by the language server — for Pyright this is `.`, `[`, `"` and `'`. Confirm a completion with `<C-y>`.

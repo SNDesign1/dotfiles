@@ -1,9 +1,9 @@
 local jdtls = require("jdtls")
 
+-- Fall back to the buffer's own directory so standalone .java files
+-- (no pom.xml/build.gradle/.git ancestor) still get jdtls attached.
 local root_dir = jdtls.setup.find_root({ "pom.xml", "build.gradle", "build.gradle.kts", ".git" })
-if not root_dir then
-  return
-end
+  or vim.fs.dirname(vim.api.nvim_buf_get_name(0))
 
 local project_name = vim.fn.fnamemodify(root_dir, ":p:h:t")
 local workspace_dir = vim.fn.stdpath("cache") .. "/jdtls-workspace/" .. project_name
