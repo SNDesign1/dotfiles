@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Give the agent-dev window a dark-green KDE title bar through a KWin window rule (class xrdashboard-nvim).
+# Needs the HackerGreen colour scheme, which `stow kitty` links into ~/.local/share/color-schemes. Safe to re-run.
+set -euo pipefail
+
+rule=6f1c2d4e-5a3b-4c7d-9e8f-a1b2c3d4e5f6
+rc=kwinrulesrc
+
+kwriteconfig6 --file "$rc" --group "$rule" --key Description "agent-dev hacker title bar"
+kwriteconfig6 --file "$rc" --group "$rule" --key wmclass xrdashboard-nvim
+kwriteconfig6 --file "$rc" --group "$rule" --key wmclassmatch 1
+kwriteconfig6 --file "$rc" --group "$rule" --key decocolor HackerGreen
+kwriteconfig6 --file "$rc" --group "$rule" --key decocolorrule 2
+
+order=$(kreadconfig6 --file "$rc" --group General --key Order)
+case ",$order," in
+  *",$rule,"*) ;;
+  *) kwriteconfig6 --file "$rc" --group General --key Order "${order:+$order,}$rule" ;;
+esac
+
+qdbus6 org.kde.KWin /KWin reconfigure >/dev/null 2>&1 || true

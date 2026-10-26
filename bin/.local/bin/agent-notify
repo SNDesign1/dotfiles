@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Tell the user the agent needs them. Meant to be run from the agent's hook, e.g. Claude Code's Stop hook.
+msg=${1:-agent finished}
+[ -n "${TMUX:-}" ] && tmux display-message -d 5000 "$msg"
+command -v notify-send >/dev/null && notify-send -a agent "$msg"
+exit 0

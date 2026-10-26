@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Open nvim on the left and a coding agent on the right in one tmux session for the current directory.
+# AGENT_CMD overrides the agent (default: claude); AGENT_WIDTH sets the agent pane width in percent (default: 35).
+set -euo pipefail
+
+agent_cmd=${AGENT_CMD:-claude}
+agent_width=${AGENT_WIDTH:-35}   # percent of the window
+session=$(basename "$PWD" | tr '. :' '___')
+
+if ! tmux has-session -t "=$session" 2>/dev/null; then
+  editor_pane=$(tmux new-session -d -s "$session" -x "$(tput cols 2>/dev/null || echo 200)" -y "$(tput lines 2>/dev/null || echo 50)" -c "$PWD" -P -F '#{pane_id}' nvim)
+  agent_pane=$(tmux split-window -h -l "${agent_width}%" -t "$editor_pane" -c "$PWD" -P -F '#{pane_id}' "$agent_cmd")
+  # nvim finds the agent pane by this pane option, since agents overwrite the pane title
+  tmux set-option -p -t "$agent_pane" @role agent
+  tmux set-option -p -t "$editor_pane" @role editor
+  tmux select-pane -t "$editor_pane"
+elif ! tmux list-panes -t "=$session" -F '#{@role}' | grep -qx editor; then
+  # Quitting nvim (:qa) closes its pane, so re-create the editor on the left of the surviving pane
+  agent_pane=$(tmux list-panes -t "=$session" -F '#{pane_id} #{@role}' | awk '$2 == "agent" {print $1; exit}')
+  agent_pane=${agent_pane:-$(tmux list-panes -t "=$session" -F '#{pane_id}' | head -n 1)}
+  tmux set-option -p -t "$agent_pane" @role agent
+  editor_pane=$(tmux split-window -hb -l "$((100 - agent_width))%" -t "$agent_pane" -c "$PWD" -P -F '#{pane_id}' nvim)
+  tmux set-option -p -t "$editor_pane" @role editor
+  tmux select-pane -t "$editor_pane"
+fi
+
+if [ -n "${TMUX:-}" ]; then
+  tmux switch-client -t "=$session"
+else
+  exec tmux attach-session -t "=$session"
+fi

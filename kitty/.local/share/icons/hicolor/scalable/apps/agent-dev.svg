@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="22" fill="#0b110d"/>
+  <rect x="3" y="3" width="122" height="122" rx="20" fill="none" stroke="#1f4d2b" stroke-width="2"/>
+  <!-- scanlines -->
+  <g stroke="#00ff66" stroke-opacity="0.07" stroke-width="2">
+    <path d="M6 22H122M6 38H122M6 54H122M6 70H122M6 86H122M6 102H122M6 118H122"/>
+  </g>
+  <!-- corner brackets -->
+  <g fill="none" stroke="#2fe0a0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 34V18H34M94 18H110V34M110 94V110H94M34 110H18V94"/>
+  </g>
+  <!-- prompt: >_ -->
+  <g filter="url(#glow)" fill="none" stroke="#00ff66" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M36 48L62 66L36 84"/>
+    <path d="M72 88H96"/>
+  </g>
+</svg>

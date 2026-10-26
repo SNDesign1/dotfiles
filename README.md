@@ -10,6 +10,7 @@ Personal Neovim configuration managed with [GNU Stow](https://www.gnu.org/softwa
 - Java and C/C++ debugging (breakpoints, step in/over/out, variable inspection) via **nvim-dap** + **nvim-dap-ui**
 - Syntax highlighting via **nvim-treesitter** + **tokyonight** theme
 - Plugin management via **lazy.nvim**
+- A single-agent workflow: Neovim and a coding agent (Claude Code by default) side by side in tmux, with the agent's edits reloaded in Neovim and reviewed as git hunks
 - All config tracked in git and symlinked with Stow
 
 ---
@@ -19,7 +20,7 @@ Personal Neovim configuration managed with [GNU Stow](https://www.gnu.org/softwa
 Install these first with pacman:
 
 ```bash
-sudo pacman -S stow pyright bash-language-server lua-language-server tree-sitter-cli clang jdk-openjdk gdb
+sudo pacman -S stow tmux pyright bash-language-server lua-language-server tree-sitter-cli clang jdk-openjdk gdb
 ```
 
 `jdtls` (the Java language server) and `java-debug` (the Java debug adapter) aren't in the official repos — install them from the AUR:
@@ -31,6 +32,7 @@ paru -S jdtls java-debug
 `java-debug` builds from source with Maven, so expect it to take a few minutes and pull in a `jdk21-openjdk` build dependency.
 
 - `stow` — symlink manager that connects this repo to `~/.config`
+- `tmux` — runs Neovim and the agent side by side (`notify-send`, from `libnotify`, is optional and used for desktop notifications)
 - `pyright` — the Python language server
 - `bash-language-server` — the Bash language server
 - `lua-language-server` — the Lua language server
@@ -48,8 +50,10 @@ paru -S jdtls java-debug
 ```bash
 git clone git@github.com:SNDesign1/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-stow nvim
+stow nvim tmux kitty bin
 ```
+
+`tmux`, `kitty` and `bin` are only needed for the agent workflow below. `bin` links `agent-dev` and `agent-notify` into `~/.local/bin`, so that directory needs to be on your `PATH`. `kitty` adds `agent-dev.conf`, a dark green-grey config used only for the agent window (it does not change your normal kitty), and expects a Nerd Font such as MesloLGM Nerd Font Mono for the file-tree icons. It also adds the `HackerGreen` KDE colour scheme and the window icon. To make the window's title bar match (KDE Plasma only), run `agent-dev-titlebar` once; it adds a KWin window rule for the `xrdashboard-nvim` window class in `~/.config/kwinrulesrc`, which this repo does not track.
 
 Then open Neovim — lazy.nvim will automatically install itself and all plugins on first launch, and `nvim-treesitter` will automatically download and compile the Python, Bash, Lua, C, C++, and Java parsers in the background. Give it a few seconds on first launch; syntax highlighting for a given file kicks in as soon as its parser finishes compiling. To add another language later, run `:TSInstall <language>`.
 
@@ -63,6 +67,58 @@ To debug a C/C++ program: compile with debug symbols (`gcc -g -o myprog myprog.c
 
 ---
 
+## Working with a coding agent
+
+A single-agent setup in the style of the editor-plus-terminal-agent workflow: Neovim on the left, one agent on the right, in the same tmux window. There is no parallel-agent orchestration. You hand work to one agent, read what it did, and decide.
+
+```bash
+cd ~/some/project
+agent-dev            # nvim (left) + claude (right), one tmux session per directory
+AGENT_CMD=opencode agent-dev   # use a different agent
+AGENT_WIDTH=30 agent-dev       # agent pane width in percent (default 35)
+```
+
+The window is nvim-tree on the left, the editor in the middle and the agent on the right. To open it in its own bare kitty window (no menu bar or toolbar), run `kitty --config ~/.config/kitty/agent-dev.conf --directory <project> agent-dev`, or use a launcher that does the same.
+
+Running `agent-dev` again in the same directory re-attaches to the existing session. Inside tmux, `Alt-h/j/k/l` moves between panes without the prefix.
+
+### Neovim keys (leader is `\`, Neovim's default)
+
+| Key | What it does |
+|---|---|
+| `<leader>e` | Toggle the file tree (`<leader>E` reveals the current file in it) |
+| `<leader>af` | Paste `@path/to/file` into the agent's prompt |
+| `<leader>as` (visual) | Paste the selected lines with file and line range |
+| `<leader>ad` | Paste this buffer's LSP diagnostics as a list to fix |
+| `<leader>ap` | Jump to the agent pane |
+| `<leader>ar` | Put every modified or new file in git into the quickfix list (`:cnext` / `:cprev` to step through) |
+| `]h` / `[h` | Next / previous changed hunk (gitsigns) |
+| `<leader>hp` | Preview the hunk |
+| `<leader>hr` / `<leader>hs` | Reset / stage the hunk |
+| `<leader>hd` | Diff the buffer against the index |
+
+Text is pasted into the agent's prompt but never submitted, so you read it and press Enter yourself. The agent pane is found through a tmux pane option (`@role=agent`) that `agent-dev` sets, because agents rewrite the pane title. If you start panes by hand and there are exactly two, the other one is used.
+
+### Reviewing what the agent did
+
+Neovim runs `:checktime` on focus, buffer enter and idle, so files the agent edits reload on their own (with a message). Use `<leader>ar` to list changed files, then `]h` and `<leader>hp` to read each hunk, and `<leader>hr` to throw one away.
+
+### Notification when the agent needs you
+
+`agent-notify` shows a tmux message and a desktop notification. To run it when Claude Code finishes a turn, add a hook to `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "Stop": [{ "hooks": [{ "type": "command", "command": "agent-notify 'agent finished'" }] }]
+  }
+}
+```
+
+This repo does not manage that file. Merge the snippet into yours by hand.
+
+---
+
 ## How it works (step by step)
 
 ### 1. Stow and the dotfiles repo
@@ -73,9 +129,9 @@ Rather than keeping config files directly in `~/.config/nvim`, everything lives 
 
 lazy.nvim is bootstrapped directly in `init.lua` — it clones itself from GitHub the first time Neovim starts if it is not already present. No manual install step required. It manages downloading and updating all plugins declared in the `require("lazy").setup({})` block.
 
-### 3. tokyonight (colourscheme)
+### 3. tokyonight (colourscheme, with a black-and-green "hacker" palette)
 
-A full truecolour theme that provides colour definitions for all Treesitter highlight groups. Without a theme that supports Treesitter, syntax highlighting appears muted or absent even when the parser is running. `priority = 1000` ensures it loads before anything else. `vim.opt.termguicolors = true` is required to tell Neovim to use the terminal's full RGB colour support.
+The palette is overridden to a dark green-grey with phosphor-green accents and no blues; start Neovim with `NVIM_THEME=tokyonight` to get the stock look. A full truecolour theme that provides colour definitions for all Treesitter highlight groups. Without a theme that supports Treesitter, syntax highlighting appears muted or absent even when the parser is running. `priority = 1000` ensures it loads before anything else. `vim.opt.termguicolors = true` is required to tell Neovim to use the terminal's full RGB colour support.
 
 ### 4. nvim-treesitter (syntax highlighting)
 
