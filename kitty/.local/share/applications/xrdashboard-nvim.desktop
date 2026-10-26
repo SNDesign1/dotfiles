@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=XRDashboard (nvim + agent)
+Comment=Neovim and a coding agent in tmux, in the XRDashboard project
+Exec=kitty --config /home/simeon/.config/kitty/agent-dev.conf --class xrdashboard-nvim --title XRDashboard --directory /home/simeon/Perforce/WS_HVR_SIMEON_LAPTOP/client-projects/XRDashboard /home/simeon/.local/bin/agent-dev
+Icon=agent-dev
+Terminal=false
+StartupWMClass=xrdashboard-nvim
+Categories=Development;
+X-KDE-Shortcuts=Ctrl+Shift+T
+Actions=PlainNvim;
+
+[Desktop Action PlainNvim]
+Name=Plain nvim only
+Exec=kitty --config /home/simeon/.config/kitty/agent-dev.conf --class xrdashboard-nvim --title XRDashboard --directory /home/simeon/Perforce/WS_HVR_SIMEON_LAPTOP/client-projects/XRDashboard nvim

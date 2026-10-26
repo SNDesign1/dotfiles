@@ -80,7 +80,21 @@ AGENT_WIDTH=30 agent-dev       # agent pane width in percent (default 35)
 
 The window is nvim-tree on the left, the editor in the middle and the agent on the right. To open it in its own bare kitty window (no menu bar or toolbar), run `kitty --config ~/.config/kitty/agent-dev.conf --directory <project> agent-dev`, or use a launcher that does the same.
 
-Running `agent-dev` again in the same directory re-attaches to the existing session. Inside tmux, `Alt-h/j/k/l` moves between panes without the prefix.
+Running `agent-dev` again in the same directory re-attaches to the existing session. If you quit nvim with `:qa` (which closes its pane), running it again recreates the editor pane on the left of the surviving agent pane; the editor and agent panes are found through the tmux pane option `@role` (`editor` / `agent`). Inside tmux, `Alt-h/j/k/l` moves between panes without the prefix.
+
+### Ctrl+Shift+T launcher (KDE Plasma)
+
+`kitty/.local/share/applications/xrdashboard-nvim.desktop` is a launcher with a global shortcut (`X-KDE-Shortcuts=Ctrl+Shift+T`) that opens the bare kitty window running `agent-dev` in the XRDashboard project. Its `Exec` line has the project path and `/home/simeon` written out, because desktop files do not expand `~` or `$HOME`, so edit those paths on another machine or for another project. There is also a "Plain nvim only" action on the launcher's right-click menu. After `stow kitty`, run `kbuildsycoca6` (or log out and in) so Plasma registers the shortcut; check it under System Settings > Shortcuts if `Ctrl+Shift+T` clashes with another binding.
+
+### Finding files and text
+
+| Key | What it does |
+|---|---|
+| `SS` | Telescope: find files (ignores generated folders and binary assets) |
+| `<leader>fa` | Find all files, including images and assets |
+| `<leader>fg` | Search text in files |
+
+Telescope uses the horizontal layout (results left, preview right) at 95% of the editor width. The file tree opens on start only when nvim is launched with no file argument, and nvim quits when the tree is the last window left.
 
 ### Neovim keys (leader is `\`, Neovim's default)
 
@@ -204,15 +218,21 @@ Debugger keymaps (global; work for C/C++ out of the box, need `java-debug` insta
 
 ```
 ~/dotfiles/
-└── nvim/
-    └── .config/
-        └── nvim/
-            ├── init.lua         ← main config
-            ├── lsp/
-            │   ├── pyright.lua  ← Python language server config
-            │   ├── bashls.lua   ← Bash language server config
-            │   ├── lua_ls.lua   ← Lua language server config
-            │   └── clangd.lua   ← C/C++ language server config
-            └── ftplugin/
-                └── java.lua     ← starts jdtls (Java) per project
+├── nvim/.config/nvim/
+│   ├── init.lua                 ← main config
+│   ├── lua/agent.lua            ← bridge to the agent tmux pane
+│   ├── lsp/
+│   │   ├── pyright.lua          ← Python language server config
+│   │   ├── bashls.lua           ← Bash language server config
+│   │   ├── lua_ls.lua           ← Lua language server config
+│   │   └── clangd.lua           ← C/C++ language server config
+│   └── ftplugin/java.lua        ← starts jdtls (Java) per project
+├── tmux/.config/tmux/tmux.conf  ← pane keys for the agent workflow
+├── bin/.local/bin/              ← agent-dev, agent-dev-titlebar, agent-notify
+└── kitty/
+    ├── .config/kitty/agent-dev.conf
+    └── .local/share/
+        ├── applications/xrdashboard-nvim.desktop  ← Ctrl+Shift+T launcher
+        ├── color-schemes/HackerGreen.colors
+        └── icons/hicolor/scalable/apps/agent-dev.svg
 ```
