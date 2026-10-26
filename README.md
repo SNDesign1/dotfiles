@@ -86,6 +86,18 @@ Running `agent-dev` again in the same directory re-attaches to the existing sess
 
 `kitty/.local/share/applications/xrdashboard-nvim.desktop` is a launcher with a global shortcut (`X-KDE-Shortcuts=Ctrl+Shift+T`) that opens the bare kitty window running `agent-dev` in the XRDashboard project. Its `Exec` line has the project path and `/home/simeon` written out, because desktop files do not expand `~` or `$HOME`, so edit those paths on another machine or for another project. There is also a "Plain nvim only" action on the launcher's right-click menu. After `stow kitty`, run `kbuildsycoca6` (or log out and in) so Plasma registers the shortcut; check it under System Settings > Shortcuts if `Ctrl+Shift+T` clashes with another binding.
 
+### Hiding the taskbar (KDE Plasma)
+
+To give the agent window the whole screen, set the Plasma panel to hide itself. This is a per-machine Plasma setting that this repo does not track.
+
+In the GUI: right-click an empty spot on the panel, choose **Enter Edit Mode**, click **More Settings...** (or the panel's gear), set **Visibility** to **Auto Hide**, then press **Done**. The panel slides away and returns when the pointer touches the screen edge. **Windows Can Cover** is the gentler option: the panel stays visible except when a window overlaps it.
+
+From a terminal, the same setting through Plasma's scripting interface (first panel only; use `"none"` to turn it back off, or `"windowscover"` for Windows Can Cover):
+
+```bash
+qdbus6 org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript 'panels()[0].hiding = "autohide"'
+```
+
 ### Finding files and text
 
 | Key | What it does |
