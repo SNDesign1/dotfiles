@@ -168,11 +168,13 @@ require("lazy").setup({
         filters = { dotfiles = false },
         renderer = { group_empty = true, root_folder_label = ":t", indent_markers = { enable = true } },
         update_focused_file = { enable = true },
-        -- nvim-tree maps S to its own search prompt, which would swallow the SS (Telescope) mapping while the tree is focused
+        -- nvim-tree maps S to its own search prompt and C to a git-clean filter, which would swallow the SS (Telescope)
+        -- and CC (floating terminal) mappings while the tree is focused
         on_attach = function(bufnr)
           local api = require("nvim-tree.api")
           api.config.mappings.default_on_attach(bufnr)
           vim.keymap.del("n", "S", { buffer = bufnr })
+          vim.keymap.del("n", "C", { buffer = bufnr })
         end,
       })
       local api = require("nvim-tree.api")
@@ -277,3 +279,5 @@ vim.keymap.set("n", "<leader>db", function() require("dap").toggle_breakpoint() 
 vim.keymap.set("n", "<leader>du", function() require("dapui").toggle() end)
 -- Coding agent in an adjacent tmux pane (see lua/agent.lua)
 require("agent").setup()
+-- Floating terminal popup (see lua/terminal.lua)
+require("terminal").setup()

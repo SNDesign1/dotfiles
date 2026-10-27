@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Generate compile_commands.json for an Unreal project so clangd (nvim) can resolve UE headers and types.
+# Run it from the project root (the folder holding the .uproject); rerun after adding source files or modules.
+# UE_ROOT overrides the engine (default: UNREALROOTPATH from the project's generated Makefile).
+# UE_TARGET overrides the target (default: <ProjectName>Editor).
+set -euo pipefail
+
+uproject=$(ls "$PWD"/*.uproject 2>/dev/null | head -n 1 || true)
+[ -n "$uproject" ] || { echo "error: no .uproject in $PWD" >&2; exit 1; }
+name=$(basename "$uproject" .uproject)
+
+engine=${UE_ROOT:-}
+if [ -z "$engine" ] && [ -f Makefile ]; then
+  engine=$(sed -n 's/^UNREALROOTPATH *= *//p' Makefile | head -n 1)
+fi
+[ -d "${engine:-}" ] || { echo "error: engine not found; set UE_ROOT" >&2; exit 1; }
+
+"$engine/Engine/Build/BatchFiles/Linux/Build.sh" \
+  -mode=GenerateClangDatabase \
+  -project="$uproject" \
+  -OutputDir="$PWD" \
+  "${UE_TARGET:-${name}Editor}" Linux Development

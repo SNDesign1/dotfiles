@@ -8,7 +8,7 @@ rc=kwinrulesrc
 
 kwriteconfig6 --file "$rc" --group "$rule" --key Description "agent-dev hacker title bar"
 kwriteconfig6 --file "$rc" --group "$rule" --key wmclass xrdashboard-nvim
-kwriteconfig6 --file "$rc" --group "$rule" --key wmclassmatch 1
+kwriteconfig6 --file "$rc" --group "$rule" --key wmclassmatch 2
 kwriteconfig6 --file "$rc" --group "$rule" --key decocolor HackerGreen
 kwriteconfig6 --file "$rc" --group "$rule" --key decocolorrule 2
 
